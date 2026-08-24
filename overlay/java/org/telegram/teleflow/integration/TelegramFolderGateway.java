@@ -2,6 +2,7 @@
 package org.telegram.teleflow.integration;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -13,12 +14,17 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.teleflow.folders.FolderServerSnapshot;
 import org.telegram.teleflow.folders.FolderUpdatePlan;
+import org.telegram.teleflow.folders.ManagedFolderSpec;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 
 public final class TelegramFolderGateway {
     public interface ResultCallback {
         void onResult(boolean success, String error);
+    }
+
+    public interface CreateCallback {
+        void onResult(boolean success, MessagesController.DialogFilter filter, String error);
     }
 
     private TelegramFolderGateway() {}
@@ -43,7 +49,7 @@ public final class TelegramFolderGateway {
         if (filter.id != plan.getFolderId()) {
             throw new IllegalArgumentException("filter id does not match update plan");
         }
-        send(fragment, filter, plan.getIncludeDialogIds(), plan.getPinnedDialogIds(), plan.getExcludeDialogIds(), callback);
+        send(fragment, filter, plan.getIncludeDialogIds(), plan.getPinnedDialogIds(), plan.getExcludeDialogIds(), false, callback);
     }
 
     public static void restoreSnapshot(BaseFragment fragment, MessagesController.DialogFilter filter, FolderServerSnapshot snapshot, ResultCallback callback) {
@@ -53,7 +59,60 @@ public final class TelegramFolderGateway {
         if (filter.id != snapshot.getFolderId()) {
             throw new IllegalArgumentException("filter id does not match backup snapshot");
         }
-        send(fragment, filter, snapshot.getIncludeDialogIds(), snapshot.getPinnedDialogIds(), snapshot.getExcludeDialogIds(), callback);
+        send(fragment, filter, snapshot.getIncludeDialogIds(), snapshot.getPinnedDialogIds(), snapshot.getExcludeDialogIds(), false, callback);
+    }
+
+    public static void createNew(BaseFragment fragment, ManagedFolderSpec spec, List<Long> includeIds, CreateCallback callback) {
+        if (fragment == null || spec == null || callback == null) {
+            throw new IllegalArgumentException("fragment, spec and callback are required");
+        }
+        MessagesController controller = fragment.getMessagesController();
+        MessagesController.DialogFilter filter = new MessagesController.DialogFilter();
+        filter.id = allocateFilterId(controller);
+        filter.name = spec.getServerName();
+        filter.color = 0;
+        filter.flags = 0;
+        filter.entities = new ArrayList<>();
+        filter.title_noanimate = false;
+        send(
+            fragment,
+            filter,
+            includeIds == null ? Collections.emptyList() : includeIds,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            true,
+            (success, error) -> callback.onResult(success, success ? filter : null, error)
+        );
+    }
+
+    public static void deleteFolder(BaseFragment fragment, MessagesController.DialogFilter filter, ResultCallback callback) {
+        if (fragment == null || filter == null || callback == null) {
+            throw new IllegalArgumentException("fragment, filter and callback are required");
+        }
+        TLRPC.TL_messages_updateDialogFilter req = new TLRPC.TL_messages_updateDialogFilter();
+        req.id = filter.id;
+        fragment.getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            if (error != null) {
+                callback.onResult(false, error.text == null ? "telegram-rpc-error" : error.text);
+                return;
+            }
+            if (response == null) {
+                callback.onResult(false, "telegram-empty-response");
+                return;
+            }
+            fragment.getMessagesController().removeFilter(filter);
+            fragment.getMessagesStorage().deleteDialogFilter(filter);
+            fragment.getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
+            callback.onResult(true, null);
+        }));
+    }
+
+    static int allocateFilterId(MessagesController controller) {
+        int id = 2;
+        while (controller.dialogFiltersById.get(id) != null) {
+            id++;
+        }
+        return id;
     }
 
     private static void send(
@@ -62,6 +121,7 @@ public final class TelegramFolderGateway {
         List<Long> includeIds,
         List<Long> pinnedIds,
         List<Long> excludeIds,
+        boolean creatingNew,
         ResultCallback callback
     ) {
         TLRPC.TL_messages_updateDialogFilter req = new TLRPC.TL_messages_updateDialogFilter();
@@ -79,7 +139,7 @@ public final class TelegramFolderGateway {
         req.filter.id = filter.id;
         req.filter.title = new TLRPC.TL_textWithEntities();
         req.filter.title.text = filter.name;
-        req.filter.title.entities = filter.entities;
+        req.filter.title.entities = filter.entities == null ? new ArrayList<>() : filter.entities;
         req.filter.title_noanimate = filter.title_noanimate;
         if (filter.color < 0) {
             req.filter.flags &= ~134217728;
@@ -124,7 +184,11 @@ public final class TelegramFolderGateway {
                     filter.pinnedDialogs.put(id, i);
                 }
             }
-            fragment.getMessagesController().onFilterUpdate(filter);
+            if (creatingNew) {
+                controller.addFilter(filter, false);
+            } else {
+                controller.onFilterUpdate(filter);
+            }
             fragment.getMessagesStorage().saveDialogFilter(filter, false, true);
             fragment.getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
             callback.onResult(true, null);
