@@ -4,8 +4,11 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - English
       - teleflow/bootstrap
+  pull_request:
+    branches:
+      - English
 
 permissions:
   contents: read
