@@ -68,6 +68,9 @@ jobs:
       - name: Verify pinned Telegram checkout
         run: python3 teleflow/scripts/verify_checkout.py Telegram
 
+      - name: Prepare pinned Telegram Gradle mapping
+        run: python3 teleflow/scripts/prepare_upstream_build.py Telegram
+
       - name: Apply TeleFlow overlay
         env:
           API_ID: ${{ secrets.TELEGRAM_API_ID }}
