@@ -3,10 +3,15 @@
     <string name="TeleFlowFoundationStatus">TeleFlow foundation is active</string>
     <string name="TeleFlowSmartFolders">Smart Folders</string>
     <string name="TeleFlowSmartFoldersInfo">Automatic sorting with preview before apply</string>
-    <string name="TeleFlowSmartFoldersStatus">Deterministic local classification is ready</string>
+    <string name="TeleFlowSmartFoldersStatus">Preview is ready. No folders are changed until you confirm Apply.</string>
     <string name="TeleFlowDrive">Drive</string>
     <string name="TeleFlowDriveInfo">Personal Telegram-backed cloud workspace</string>
     <string name="TeleFlowDriveStatus">Virtual paths and Telegram object model are ready</string>
     <string name="TeleFlowSmartFoldersScanned">Dialogs analyzed</string>
     <string name="TeleFlowSmartFoldersNeedsReview">Need review</string>
     <string name="TeleFlowReviewFolder">Review</string>
+    <string name="TeleFlowApply">Apply</string>
+    <string name="TeleFlowApplyConfirm">TeleFlow will create or update only TeleFlow-owned folders. Manually added chats, pinned chats and exclusions are preserved. Changes begin only after this confirmation.</string>
+    <string name="TeleFlowApplying">Applying smart folders…</string>
+    <string name="TeleFlowApplySuccess">Smart folders applied successfully</string>
+    <string name="TeleFlowApplyFailed">Could not apply smart folders</string>
