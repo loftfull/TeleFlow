@@ -14,7 +14,14 @@ public final class FolderApplyCoordinator {
         boolean delete(int folderId);
     }
 
+    public interface ManagedBackupPersistence {
+        boolean save(ManagedFolderState state);
+        ManagedFolderState load(int folderId);
+        boolean delete(int folderId);
+    }
+
     public interface ManagedPersistence {
+        ManagedFolderState load(int folderId);
         boolean save(ManagedFolderState state);
         boolean delete(int folderId);
     }
@@ -61,6 +68,7 @@ public final class FolderApplyCoordinator {
         ManagedFolderState managed,
         List<Long> desiredManagedDialogIds,
         BackupPersistence backup,
+        ManagedBackupPersistence managedBackup,
         ManagedPersistence managedPersistence,
         Remote remote,
         Completion completion
@@ -68,6 +76,7 @@ public final class FolderApplyCoordinator {
         require(current, "current");
         require(managed, "managed");
         require(backup, "backup");
+        require(managedBackup, "managedBackup");
         require(managedPersistence, "managedPersistence");
         require(remote, "remote");
         require(completion, "completion");
@@ -76,12 +85,18 @@ public final class FolderApplyCoordinator {
         FolderUpdatePlan plan = FolderMutationPlanner.merge(current, managed, desired);
 
         if (!backup.save(current)) {
-            completion.onComplete(Result.fail("backup-save-failed", "Refusing remote mutation without durable backup"));
+            completion.onComplete(Result.fail("backup-save-failed", "Refusing remote mutation without durable server backup"));
+            return;
+        }
+        if (!managedBackup.save(managed)) {
+            backup.delete(current.getFolderId());
+            completion.onComplete(Result.fail("managed-backup-save-failed", "Refusing remote mutation without durable managed-state backup"));
             return;
         }
 
         remote.apply(plan, (success, error) -> {
             if (!success) {
+                cleanupBackups(current.getFolderId(), backup, managedBackup);
                 completion.onComplete(Result.fail("remote-apply-failed", error));
                 return;
             }
@@ -94,6 +109,7 @@ public final class FolderApplyCoordinator {
 
             remote.restore(current, (rollbackSuccess, rollbackError) -> {
                 if (rollbackSuccess) {
+                    cleanupBackups(current.getFolderId(), backup, managedBackup);
                     completion.onComplete(Result.fail(
                         "managed-state-save-failed-rolled-back",
                         "Remote mutation was rolled back because local managed state could not be persisted"
@@ -109,20 +125,25 @@ public final class FolderApplyCoordinator {
     }
 
     public static void undo(
+        FolderServerSnapshot current,
         int folderId,
         BackupPersistence backup,
+        ManagedBackupPersistence managedBackup,
         ManagedPersistence managedPersistence,
         Remote remote,
         Completion completion
     ) {
+        require(current, "current");
         require(backup, "backup");
+        require(managedBackup, "managedBackup");
         require(managedPersistence, "managedPersistence");
         require(remote, "remote");
         require(completion, "completion");
 
         FolderServerSnapshot snapshot = backup.load(folderId);
-        if (snapshot == null) {
-            completion.onComplete(Result.fail("backup-missing", "No backup exists for folder"));
+        ManagedFolderState previousManaged = managedBackup.load(folderId);
+        if (snapshot == null || previousManaged == null) {
+            completion.onComplete(Result.fail("backup-missing", "Server or managed-state backup is missing"));
             return;
         }
 
@@ -131,16 +152,30 @@ public final class FolderApplyCoordinator {
                 completion.onComplete(Result.fail("remote-undo-failed", error));
                 return;
             }
-            if (!managedPersistence.delete(folderId)) {
-                completion.onComplete(Result.fail(
-                    "managed-state-delete-failed",
-                    "Folder was restored remotely, but local managed state could not be cleared"
-                ));
+            if (managedPersistence.save(previousManaged)) {
+                cleanupBackups(folderId, backup, managedBackup);
+                completion.onComplete(Result.ok());
                 return;
             }
-            backup.delete(folderId);
-            completion.onComplete(Result.ok());
+            remote.restore(current, (rollbackSuccess, rollbackError) -> {
+                if (rollbackSuccess) {
+                    completion.onComplete(Result.fail(
+                        "managed-state-restore-failed-undo-rolled-back",
+                        "Undo was rolled back because previous managed state could not be restored"
+                    ));
+                } else {
+                    completion.onComplete(Result.fail(
+                        "managed-state-restore-failed-rollback-failed",
+                        rollbackError
+                    ));
+                }
+            });
         });
+    }
+
+    private static void cleanupBackups(int folderId, BackupPersistence backup, ManagedBackupPersistence managedBackup) {
+        backup.delete(folderId);
+        managedBackup.delete(folderId);
     }
 
     private static List<Long> deduplicate(List<Long> values) {
@@ -149,16 +184,12 @@ public final class FolderApplyCoordinator {
         }
         LinkedHashSet<Long> unique = new LinkedHashSet<>();
         for (Long value : values) {
-            if (value != null) {
-                unique.add(value);
-            }
+            if (value != null) unique.add(value);
         }
         return new ArrayList<>(unique);
     }
 
     private static void require(Object value, String name) {
-        if (value == null) {
-            throw new IllegalArgumentException(name + " is required");
-        }
+        if (value == null) throw new IllegalArgumentException(name + " is required");
     }
 }
