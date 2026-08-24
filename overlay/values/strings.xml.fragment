@@ -1,6 +1,6 @@
     <string name="TeleFlowSettings">TeleFlow</string>
-    <string name="TeleFlowSettingsInfo">Smart folders, Drive and automation</string>
-    <string name="TeleFlowFoundationStatus">TeleFlow foundation is active</string>
+    <string name="TeleFlowSettingsInfo">Smart Folders and Drive</string>
+    <string name="TeleFlowFoundationStatus">Smart messenger. Everything under control.</string>
     <string name="TeleFlowSmartFolders">Smart Folders</string>
     <string name="TeleFlowSmartFoldersInfo">Automatic sorting with preview before apply</string>
     <string name="TeleFlowSmartFoldersStatus">Preview is ready. No folders are changed until you confirm Apply.</string>

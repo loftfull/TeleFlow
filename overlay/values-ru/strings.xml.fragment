@@ -1,6 +1,6 @@
     <string name="TeleFlowSettings">TeleFlow</string>
-    <string name="TeleFlowSettingsInfo">Умные папки, Drive и автоматизация</string>
-    <string name="TeleFlowFoundationStatus">Основа TeleFlow активна</string>
+    <string name="TeleFlowSettingsInfo">Умные папки и Drive</string>
+    <string name="TeleFlowFoundationStatus">Умный мессенджер. Всё под контролем.</string>
     <string name="TeleFlowSmartFolders">Умные папки</string>
     <string name="TeleFlowSmartFoldersInfo">Автоматическая сортировка с предварительным просмотром</string>
     <string name="TeleFlowSmartFoldersStatus">Предпросмотр готов. До подтверждения «Применить» папки не изменяются.</string>
