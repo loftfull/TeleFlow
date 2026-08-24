@@ -28,4 +28,12 @@ public final class ManagedFolderCatalog {
         }
         return null;
     }
+
+    public static ManagedFolderSpec byLogicalKey(String logicalKey) {
+        if (logicalKey == null) return null;
+        for (ManagedFolderSpec spec : create()) {
+            if (spec.getLogicalKey().equals(logicalKey)) return spec;
+        }
+        return null;
+    }
 }
