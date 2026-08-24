@@ -84,6 +84,7 @@ class TeleFlowPatcherTests(unittest.TestCase):
             folders_dir / "FolderPreviewPlanner.java",
             drive_dir / "VirtualPath.java",
             drive_dir / "DriveObject.java",
+            drive_dir / "DriveIndex.java",
         ]
         ui_dir = root / "TMessagesProj/src/main/java/org/telegram/teleflow/ui"
         ui_expected = [
@@ -107,6 +108,7 @@ import org.telegram.teleflow.folders.FolderPreviewPlan;
 import org.telegram.teleflow.folders.FolderPreviewPlanner;
 import org.telegram.teleflow.drive.VirtualPath;
 import org.telegram.teleflow.drive.DriveObject;
+import org.telegram.teleflow.drive.DriveIndex;
 
 public class TeleFlowDomainHarness {
     public static void main(String[] args) {
@@ -156,8 +158,16 @@ public class TeleFlowDomainHarness {
             throw new AssertionError("parent traversal was accepted");
         }
         DriveObject object = new DriveObject(42, 99L, "contract.pdf", "application/pdf", 1024L, path);
+        DriveObject second = new DriveObject(43, 99L, "budget.xlsx", "application/vnd.ms-excel", 2048L, "/Work/Finance");
         if (!"contract.pdf".equals(object.getName()) || !path.equals(object.getVirtualPath())) {
             throw new AssertionError("drive object failed");
+        }
+        DriveIndex index = DriveIndex.from(Arrays.asList(object, second));
+        if (index.getFileCount() != 2 || index.getTotalBytes() != 3072L) {
+            throw new AssertionError("drive index totals failed");
+        }
+        if (index.getDirectoryBytes("/Work/Contracts/2026") != 1024L || index.getObjects("/Work/Finance").size() != 1) {
+            throw new AssertionError("drive directory index failed");
         }
     }
 }
