@@ -91,13 +91,25 @@ public final class TelegramFolderGateway {
 
         MessagesController controller = fragment.getMessagesController();
         LongSparseIntArray pinnedMap = toPinnedMap(pinnedIds);
-        appendPeers(controller, includeIds, req.filter.include_peers, pinnedMap, true);
-        appendPeers(controller, excludeIds, req.filter.exclude_peers, pinnedMap, false);
-        appendPeers(controller, pinnedIds, req.filter.pinned_peers, pinnedMap, false);
+        Long unresolved = appendPeers(controller, includeIds, req.filter.include_peers, pinnedMap, true);
+        if (unresolved == null) {
+            unresolved = appendPeers(controller, excludeIds, req.filter.exclude_peers, pinnedMap, false);
+        }
+        if (unresolved == null) {
+            unresolved = appendPeers(controller, pinnedIds, req.filter.pinned_peers, pinnedMap, false);
+        }
+        if (unresolved != null) {
+            callback.onResult(false, "unresolved-dialog:" + unresolved);
+            return;
+        }
 
         fragment.getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             if (error != null) {
                 callback.onResult(false, error.text == null ? "telegram-rpc-error" : error.text);
+                return;
+            }
+            if (response == null) {
+                callback.onResult(false, "telegram-empty-response");
                 return;
             }
 
@@ -119,7 +131,7 @@ public final class TelegramFolderGateway {
         }));
     }
 
-    private static void appendPeers(
+    private static Long appendPeers(
         MessagesController controller,
         List<Long> ids,
         ArrayList<TLRPC.InputPeer> destination,
@@ -135,32 +147,35 @@ public final class TelegramFolderGateway {
                 continue;
             }
             if (DialogObject.isEncryptedDialog(did)) {
-                continue;
+                return did;
             }
             if (did > 0) {
                 TLRPC.User user = controller.getUser(did);
-                if (user != null) {
-                    TLRPC.TL_inputPeerUser inputPeer = new TLRPC.TL_inputPeerUser();
-                    inputPeer.user_id = did;
-                    inputPeer.access_hash = user.access_hash;
-                    destination.add(inputPeer);
+                if (user == null) {
+                    return did;
                 }
+                TLRPC.TL_inputPeerUser inputPeer = new TLRPC.TL_inputPeerUser();
+                inputPeer.user_id = did;
+                inputPeer.access_hash = user.access_hash;
+                destination.add(inputPeer);
             } else {
                 TLRPC.Chat chat = controller.getChat(-did);
-                if (chat != null) {
-                    if (ChatObject.isChannel(chat)) {
-                        TLRPC.TL_inputPeerChannel inputPeer = new TLRPC.TL_inputPeerChannel();
-                        inputPeer.channel_id = -did;
-                        inputPeer.access_hash = chat.access_hash;
-                        destination.add(inputPeer);
-                    } else {
-                        TLRPC.TL_inputPeerChat inputPeer = new TLRPC.TL_inputPeerChat();
-                        inputPeer.chat_id = -did;
-                        destination.add(inputPeer);
-                    }
+                if (chat == null) {
+                    return did;
+                }
+                if (ChatObject.isChannel(chat)) {
+                    TLRPC.TL_inputPeerChannel inputPeer = new TLRPC.TL_inputPeerChannel();
+                    inputPeer.channel_id = -did;
+                    inputPeer.access_hash = chat.access_hash;
+                    destination.add(inputPeer);
+                } else {
+                    TLRPC.TL_inputPeerChat inputPeer = new TLRPC.TL_inputPeerChat();
+                    inputPeer.chat_id = -did;
+                    destination.add(inputPeer);
                 }
             }
         }
+        return null;
     }
 
     private static LongSparseIntArray toPinnedMap(List<Long> pinnedIds) {
