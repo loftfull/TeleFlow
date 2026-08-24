@@ -3,10 +3,15 @@
     <string name="TeleFlowFoundationStatus">Основа TeleFlow активна</string>
     <string name="TeleFlowSmartFolders">Умные папки</string>
     <string name="TeleFlowSmartFoldersInfo">Автоматическая сортировка с предварительным просмотром</string>
-    <string name="TeleFlowSmartFoldersStatus">Детерминированная локальная классификация готова</string>
+    <string name="TeleFlowSmartFoldersStatus">Предпросмотр готов. До подтверждения «Применить» папки не изменяются.</string>
     <string name="TeleFlowDrive">Drive</string>
     <string name="TeleFlowDriveInfo">Личное облачное пространство на базе Telegram</string>
     <string name="TeleFlowDriveStatus">Виртуальные пути и модель Telegram-объектов готовы</string>
     <string name="TeleFlowSmartFoldersScanned">Диалогов проанализировано</string>
     <string name="TeleFlowSmartFoldersNeedsReview">Требуют разбора</string>
     <string name="TeleFlowReviewFolder">Разобрать</string>
+    <string name="TeleFlowApply">Применить</string>
+    <string name="TeleFlowApplyConfirm">TeleFlow создаст или обновит только принадлежащие ему папки. Добавленные вручную чаты, закрепления и исключения сохранятся. Изменения начнутся только после этого подтверждения.</string>
+    <string name="TeleFlowApplying">Применяю умные папки…</string>
+    <string name="TeleFlowApplySuccess">Умные папки успешно применены</string>
+    <string name="TeleFlowApplyFailed">Не удалось применить умные папки</string>
