@@ -79,6 +79,9 @@ class TeleFlowPatcherTests(unittest.TestCase):
             folders_dir / "FolderRule.java",
             folders_dir / "ClassificationDecision.java",
             folders_dir / "FolderRuleEngine.java",
+            folders_dir / "FolderAssignment.java",
+            folders_dir / "FolderPreviewPlan.java",
+            folders_dir / "FolderPreviewPlanner.java",
             drive_dir / "VirtualPath.java",
             drive_dir / "DriveObject.java",
         ]
@@ -100,6 +103,8 @@ import org.telegram.teleflow.folders.ChatDescriptor;
 import org.telegram.teleflow.folders.FolderRule;
 import org.telegram.teleflow.folders.FolderRuleEngine;
 import org.telegram.teleflow.folders.ClassificationDecision;
+import org.telegram.teleflow.folders.FolderPreviewPlan;
+import org.telegram.teleflow.folders.FolderPreviewPlanner;
 import org.telegram.teleflow.drive.VirtualPath;
 import org.telegram.teleflow.drive.DriveObject;
 
@@ -117,11 +122,25 @@ public class TeleFlowDomainHarness {
         if (!"Finance".equals(hit.getFolder()) || hit.getConfidence() != 1.0d) {
             throw new AssertionError("folder classification failed");
         }
-        ClassificationDecision miss = engine.classify(
-            new ChatDescriptor(11L, "Family", "family", ChatDescriptor.PeerType.GROUP)
-        );
+        ChatDescriptor reviewChat = new ChatDescriptor(11L, "Family", "family", ChatDescriptor.PeerType.GROUP);
+        ClassificationDecision miss = engine.classify(reviewChat);
         if (!"Review".equals(miss.getFolder())) {
             throw new AssertionError("fallback classification failed");
+        }
+        FolderPreviewPlan preview = FolderPreviewPlanner.plan(
+            Arrays.asList(
+                new ChatDescriptor(10L, "NASDAQ Investment News", "markets", ChatDescriptor.PeerType.CHANNEL),
+                new ChatDescriptor(12L, "Investment Ideas", "invest", ChatDescriptor.PeerType.CHANNEL),
+                reviewChat
+            ),
+            engine,
+            "Review"
+        );
+        if (preview.getTotalChats() != 3 || preview.getFolderCount("Finance") != 2 || preview.getReviewCount() != 1) {
+            throw new AssertionError("preview aggregation failed");
+        }
+        if (preview.getAssignments("Finance").get(0).getChat().getDialogId() != 10L) {
+            throw new AssertionError("preview order must be stable");
         }
         String path = VirtualPath.normalize("Work//Contracts/2026/");
         if (!"/Work/Contracts/2026".equals(path)) {
