@@ -7,3 +7,6 @@
     <string name="TeleFlowDrive">Drive</string>
     <string name="TeleFlowDriveInfo">Личное облачное пространство на базе Telegram</string>
     <string name="TeleFlowDriveStatus">Виртуальные пути и модель Telegram-объектов готовы</string>
+    <string name="TeleFlowSmartFoldersScanned">Диалогов проанализировано</string>
+    <string name="TeleFlowSmartFoldersNeedsReview">Требуют разбора</string>
+    <string name="TeleFlowReviewFolder">Разобрать</string>
