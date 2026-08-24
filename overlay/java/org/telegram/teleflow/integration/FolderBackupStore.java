@@ -31,15 +31,15 @@ public final class FolderBackupStore {
         return FolderBackupCodec.decode(encoded);
     }
 
-    public void save(FolderServerSnapshot snapshot) {
+    public boolean save(FolderServerSnapshot snapshot) {
         if (snapshot == null) {
             throw new IllegalArgumentException("snapshot is required");
         }
-        preferences.edit().putString(key(snapshot.getFolderId()), FolderBackupCodec.encode(snapshot)).apply();
+        return preferences.edit().putString(key(snapshot.getFolderId()), FolderBackupCodec.encode(snapshot)).commit();
     }
 
-    public void delete(int folderId) {
-        preferences.edit().remove(key(folderId)).apply();
+    public boolean delete(int folderId) {
+        return preferences.edit().remove(key(folderId)).commit();
     }
 
     private static String key(int folderId) {
