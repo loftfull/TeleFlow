@@ -1,0 +1,9 @@
+    <string name="TeleFlowSettings">TeleFlow</string>
+    <string name="TeleFlowSettingsInfo">Умные папки, Drive и автоматизация</string>
+    <string name="TeleFlowFoundationStatus">Основа TeleFlow активна</string>
+    <string name="TeleFlowSmartFolders">Умные папки</string>
+    <string name="TeleFlowSmartFoldersInfo">Автоматическая сортировка с предварительным просмотром</string>
+    <string name="TeleFlowSmartFoldersStatus">Детерминированная локальная классификация готова</string>
+    <string name="TeleFlowDrive">Drive</string>
+    <string name="TeleFlowDriveInfo">Личное облачное пространство на базе Telegram</string>
+    <string name="TeleFlowDriveStatus">Виртуальные пути и модель Telegram-объектов готовы</string>
