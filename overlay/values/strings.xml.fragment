@@ -1,0 +1,9 @@
+    <string name="TeleFlowSettings">TeleFlow</string>
+    <string name="TeleFlowSettingsInfo">Smart folders, Drive and automation</string>
+    <string name="TeleFlowFoundationStatus">TeleFlow foundation is active</string>
+    <string name="TeleFlowSmartFolders">Smart Folders</string>
+    <string name="TeleFlowSmartFoldersInfo">Automatic sorting with preview before apply</string>
+    <string name="TeleFlowSmartFoldersStatus">Deterministic local classification is ready</string>
+    <string name="TeleFlowDrive">Drive</string>
+    <string name="TeleFlowDriveInfo">Personal Telegram-backed cloud workspace</string>
+    <string name="TeleFlowDriveStatus">Virtual paths and Telegram object model are ready</string>
