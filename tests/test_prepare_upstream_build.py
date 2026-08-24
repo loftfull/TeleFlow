@@ -1,3 +1,4 @@
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -6,7 +7,7 @@ from scripts.prepare_upstream_build import PatchError, prepare
 
 
 SETTINGS = """include ':TMessagesProj'\ninclude ':TMessagesProj_App'\ninclude ':TMessagesProj_AppHuawei'\ninclude ':TMessagesProj_AppHockeyApp'\ninclude ':TMessagesProj_AppStandalone'\ninclude ':TMessagesProj_AppTests'\n"""
-APP_BUILD = """apply plugin: 'com.android.application'\n\nandroid {\n}\n\napply plugin: 'com.google.gms.google-services'\n"""
+APP_BUILD = """apply plugin: 'com.android.application'\n\nandroid {\n    productFlavors {\n        afat {\n            ndk {\n                abiFilters \"armeabi-v7a\", \"arm64-v8a\", \"x86\", \"x86_64\"\n            }\n        }\n    }\n}\n\napply plugin: 'com.google.gms.google-services'\n"""
 
 
 class PrepareUpstreamBuildTests(unittest.TestCase):
@@ -56,6 +57,19 @@ class PrepareUpstreamBuildTests(unittest.TestCase):
         (root / "TMessagesProj_App/build.gradle").write_text("apply plugin: 'com.android.application'\n", encoding="utf-8")
         with self.assertRaises(PatchError):
             prepare(root)
+
+    def test_cli_can_prepare_arm64_only_smoke_variant(self):
+        root = self.make_checkout()
+        script = Path(__file__).resolve().parents[1] / "scripts/prepare_upstream_build.py"
+        result = subprocess.run(
+            ["python3", str(script), str(root), "--arm64-smoke"],
+            text=True,
+            capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        text = (root / "TMessagesProj_App/build.gradle").read_text(encoding="utf-8")
+        self.assertIn('abiFilters "arm64-v8a"', text)
+        self.assertNotIn('abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"', text)
 
 
 if __name__ == "__main__":
