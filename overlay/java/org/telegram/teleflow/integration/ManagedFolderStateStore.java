@@ -31,15 +31,15 @@ public final class ManagedFolderStateStore {
         return ManagedFolderStateCodec.decode(encoded);
     }
 
-    public void save(ManagedFolderState state) {
+    public boolean save(ManagedFolderState state) {
         if (state == null) {
             throw new IllegalArgumentException("state is required");
         }
-        preferences.edit().putString(key(state.getFolderId()), ManagedFolderStateCodec.encode(state)).apply();
+        return preferences.edit().putString(key(state.getFolderId()), ManagedFolderStateCodec.encode(state)).commit();
     }
 
-    public void delete(int folderId) {
-        preferences.edit().remove(key(folderId)).apply();
+    public boolean delete(int folderId) {
+        return preferences.edit().remove(key(folderId)).commit();
     }
 
     private static String key(int folderId) {
