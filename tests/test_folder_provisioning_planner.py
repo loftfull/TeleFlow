@@ -48,6 +48,7 @@ public class FolderProvisioningHarness {
                 throw new AssertionError("name too long: " + spec.getServerName());
             }
         }
+        if (!"review".equals(ManagedFolderCatalog.byLogicalKey("review").getLogicalKey())) throw new AssertionError("logical lookup");
 
         FolderProvisioningPlan none = FolderProvisioningPlanner.plan(counts, managed, 10, 10);
         if (!none.getCreate().isEmpty()) throw new AssertionError("must not exceed limit");
