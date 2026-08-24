@@ -1,14 +1,7 @@
-name: Build TeleFlow Android APK
+name: Build TeleFlow Android Full APK
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - English
-      - teleflow/bootstrap
-  pull_request:
-    branches:
-      - English
 
 permissions:
   contents: read
@@ -87,14 +80,14 @@ jobs:
           grep -q '<string name="AppName">TeleFlow</string>' Telegram/TMessagesProj/src/main/res/values/strings.xml
           test -f Telegram/TMessagesProj/src/main/java/org/telegram/teleflow/core/TeleFlowFeatures.java
 
-      - name: Build afat debug APK
+      - name: Build full afat debug APK
         working-directory: Telegram
         run: ./gradlew --no-daemon :TMessagesProj_App:assembleAfatDebug
 
-      - name: Upload TeleFlow APK
+      - name: Upload full TeleFlow APK
         uses: actions/upload-artifact@v4
         with:
-          name: teleflow-android-debug
+          name: teleflow-android-full-debug
           path: Telegram/TMessagesProj_App/build/outputs/apk/**/app.apk
           if-no-files-found: error
           retention-days: 14
