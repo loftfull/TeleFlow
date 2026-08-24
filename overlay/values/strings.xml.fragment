@@ -2,8 +2,8 @@
     <string name="TeleFlowSettingsInfo">Smart Folders and Drive</string>
     <string name="TeleFlowFoundationStatus">Smart messenger. Everything under control.</string>
     <string name="TeleFlowSmartFolders">Smart Folders</string>
-    <string name="TeleFlowSmartFoldersInfo">Automatic sorting with preview before apply</string>
-    <string name="TeleFlowSmartFoldersStatus">Preview is ready. No folders are changed until you confirm Apply.</string>
+    <string name="TeleFlowSmartFoldersInfo">Read-only classification preview</string>
+    <string name="TeleFlowSmartFoldersStatus">Read-only preview. Folder changes are disabled until the safety review is complete.</string>
     <string name="TeleFlowDrive">Drive</string>
     <string name="TeleFlowDriveInfo">Personal Telegram-backed cloud workspace</string>
     <string name="TeleFlowDriveStatus">Virtual paths and Telegram object model are ready</string>

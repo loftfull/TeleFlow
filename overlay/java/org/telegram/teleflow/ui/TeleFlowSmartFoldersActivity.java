@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 package org.telegram.teleflow.ui;
 
+import static org.telegram.messenger.LocaleController.getString;
+
 import android.content.Context;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -19,17 +20,12 @@ import org.telegram.teleflow.folders.FolderAssignment;
 import org.telegram.teleflow.folders.FolderPreviewPlan;
 import org.telegram.teleflow.folders.FolderPreviewPlanner;
 import org.telegram.teleflow.folders.FolderRuleEngine;
-import org.telegram.teleflow.integration.SmartFoldersBatchApply;
 import org.telegram.teleflow.integration.TelegramDialogReader;
 import org.telegram.ui.ActionBar.ActionBar;
-import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 
 public final class TeleFlowSmartFoldersActivity extends BaseFragment {
     private FolderPreviewPlan preview;
-    private String reviewFolder;
-    private TextView statusView;
-    private TextView applyButton;
 
     @Override
     public View createView(Context context) {
@@ -39,7 +35,7 @@ public final class TeleFlowSmartFoldersActivity extends BaseFragment {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });
 
-        reviewFolder = getString(R.string.TeleFlowReviewFolder);
+        String reviewFolder = getString(R.string.TeleFlowReviewFolder);
         List<ChatDescriptor> chats = TelegramDialogReader.readLoadedDialogs(getMessagesController());
         FolderRuleEngine engine = new FolderRuleEngine(DefaultFolderRules.create(), reviewFolder);
         preview = FolderPreviewPlanner.plan(chats, engine, reviewFolder);
@@ -72,19 +68,10 @@ public final class TeleFlowSmartFoldersActivity extends BaseFragment {
         summaryView.setBackground(TeleFlowUi.cardBackground());
         column.addView(summaryView, rowParams(12));
 
-        statusView = TeleFlowUi.text(context, getString(R.string.TeleFlowSmartFoldersStatus), 13, TeleFlowUi.TEXT_SECONDARY, false);
+        TextView statusView = TeleFlowUi.text(context, getString(R.string.TeleFlowSmartFoldersStatus), 13, TeleFlowUi.TEXT_SECONDARY, false);
         statusView.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(14), AndroidUtilities.dp(16), AndroidUtilities.dp(14));
         statusView.setBackground(TeleFlowUi.cardBackground());
         column.addView(statusView, rowParams(12));
-
-        applyButton = TeleFlowUi.text(context, getString(R.string.TeleFlowApply), 16, TeleFlowUi.TEXT_PRIMARY, true);
-        applyButton.setGravity(Gravity.CENTER);
-        applyButton.setBackground(TeleFlowUi.accentBackground(TeleFlowUi.BLUE, TeleFlowUi.PURPLE));
-        applyButton.setPadding(AndroidUtilities.dp(18), AndroidUtilities.dp(14), AndroidUtilities.dp(18), AndroidUtilities.dp(14));
-        applyButton.setEnabled(preview.getTotalChats() > 0);
-        applyButton.setAlpha(applyButton.isEnabled() ? 1f : 0.45f);
-        applyButton.setOnClickListener(v -> showApplyConfirmation());
-        column.addView(applyButton, rowParams(16));
         return fragmentView;
     }
 
@@ -116,35 +103,6 @@ public final class TeleFlowSmartFoldersActivity extends BaseFragment {
             summary.append(getString(R.string.TeleFlowSmartFoldersStatus));
         }
         return summary.toString();
-    }
-
-    private void showApplyConfirmation() {
-        if (getParentActivity() == null || preview == null) return;
-        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-        builder.setTitle(getString(R.string.TeleFlowApply));
-        builder.setMessage(getString(R.string.TeleFlowApplyConfirm));
-        builder.setNegativeButton(getString(R.string.Cancel), null);
-        builder.setPositiveButton(getString(R.string.TeleFlowApply), (dialog, which) -> applyPreview());
-        showDialog(builder.create());
-    }
-
-    private void applyPreview() {
-        if (applyButton == null || statusView == null) return;
-        applyButton.setEnabled(false);
-        applyButton.setAlpha(0.45f);
-        statusView.setTextColor(TeleFlowUi.TEXT_SECONDARY);
-        statusView.setText(getString(R.string.TeleFlowApplying));
-        SmartFoldersBatchApply.apply(this, currentAccount, preview, reviewFolder, result -> {
-            applyButton.setEnabled(true);
-            applyButton.setAlpha(1f);
-            if (result.isSuccess()) {
-                statusView.setTextColor(TeleFlowUi.TEAL);
-                statusView.setText(getString(R.string.TeleFlowApplySuccess));
-            } else {
-                statusView.setTextColor(TeleFlowUi.TEXT_PRIMARY);
-                statusView.setText(getString(R.string.TeleFlowApplyFailed) + "\n" + result.getCode() + (result.getDetail().isEmpty() ? "" : ": " + result.getDetail()));
-            }
-        });
     }
 
     private LinearLayout.LayoutParams rowParams(int topMarginDp) {

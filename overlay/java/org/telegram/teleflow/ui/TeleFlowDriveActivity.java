@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 package org.telegram.teleflow.ui;
 
+import static org.telegram.messenger.LocaleController.getString;
+
 import android.content.Context;
 import android.view.View;
 import android.widget.LinearLayout;

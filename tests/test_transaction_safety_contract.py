@@ -33,6 +33,21 @@ class TransactionSafetyContractTests(unittest.TestCase):
         self.assertIn("if (chat == null)", text)
         self.assertIn("if (DialogObject.isEncryptedDialog(did))", text)
 
+    def test_gateway_mutations_are_compile_time_disabled_before_rpc(self):
+        root = Path(__file__).resolve().parents[1]
+        path = root / "overlay/java/org/telegram/teleflow/integration/TelegramFolderGateway.java"
+        text = path.read_text(encoding="utf-8")
+        self.assertIn("private static final boolean MUTATIONS_ENABLED = false;", text)
+        self.assertEqual(2, text.count("sendRequest("))
+
+        for marker in ["public static void deleteFolder(", "private static void send("]:
+            method_start = text.index(marker)
+            rpc_start = text.index("sendRequest(", method_start)
+            guard_start = text.index("if (!MUTATIONS_ENABLED)", method_start, rpc_start)
+            error_start = text.index('"mutations-disabled"', guard_start, rpc_start)
+            self.assertLess(guard_start, error_start)
+            self.assertLess(error_start, rpc_start)
+
 
 if __name__ == "__main__":
     unittest.main()

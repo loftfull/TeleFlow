@@ -19,6 +19,8 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 
 public final class TelegramFolderGateway {
+    private static final boolean MUTATIONS_ENABLED = false;
+
     public interface ResultCallback {
         void onResult(boolean success, String error);
     }
@@ -89,6 +91,10 @@ public final class TelegramFolderGateway {
         if (fragment == null || filter == null || callback == null) {
             throw new IllegalArgumentException("fragment, filter and callback are required");
         }
+        if (!MUTATIONS_ENABLED) {
+            callback.onResult(false, "mutations-disabled");
+            return;
+        }
         TLRPC.TL_messages_updateDialogFilter req = new TLRPC.TL_messages_updateDialogFilter();
         req.id = filter.id;
         fragment.getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
@@ -124,6 +130,10 @@ public final class TelegramFolderGateway {
         boolean creatingNew,
         ResultCallback callback
     ) {
+        if (!MUTATIONS_ENABLED) {
+            callback.onResult(false, "mutations-disabled");
+            return;
+        }
         TLRPC.TL_messages_updateDialogFilter req = new TLRPC.TL_messages_updateDialogFilter();
         req.id = filter.id;
         req.flags |= 1;

@@ -2,8 +2,8 @@
     <string name="TeleFlowSettingsInfo">Умные папки и Drive</string>
     <string name="TeleFlowFoundationStatus">Умный мессенджер. Всё под контролем.</string>
     <string name="TeleFlowSmartFolders">Умные папки</string>
-    <string name="TeleFlowSmartFoldersInfo">Автоматическая сортировка с предварительным просмотром</string>
-    <string name="TeleFlowSmartFoldersStatus">Предпросмотр готов. До подтверждения «Применить» папки не изменяются.</string>
+    <string name="TeleFlowSmartFoldersInfo">Предпросмотр автоматической сортировки без изменения папок</string>
+    <string name="TeleFlowSmartFoldersStatus">Предпросмотр только для чтения. Изменение папок отключено до завершения проверки безопасности.</string>
     <string name="TeleFlowDrive">Drive</string>
     <string name="TeleFlowDriveInfo">Личное облачное пространство на базе Telegram</string>
     <string name="TeleFlowDriveStatus">Виртуальные пути и модель Telegram-объектов готовы</string>

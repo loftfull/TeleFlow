@@ -7,7 +7,7 @@ class DefaultRulesTests(unittest.TestCase):
         repo = Path(__file__).resolve().parents[1]
         rules = repo / "overlay/java/org/telegram/teleflow/folders/DefaultFolderRules.java"
         self.assertTrue(rules.is_file())
-        text = rules.read_text()
+        text = rules.read_text(encoding="utf-8")
         for expected in ["AI & Tech", "Финансы", "Авто", "Новости", "Покупки", "Обучение", "Боты"]:
             self.assertIn(expected, text)
         for keyword in ["openai", "нейросет", "nasdaq", "инвести", "volvo", "новости", "ozon", "обучение"]:

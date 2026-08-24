@@ -2,8 +2,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-python3 -m unittest discover -s tests -v
-python3 -m compileall -q scripts tests
+if command -v python >/dev/null 2>&1; then
+  PYTHON_BIN=python
+else
+  PYTHON_BIN=python3
+fi
+
+"$PYTHON_BIN" -m unittest discover -s tests -v
+"$PYTHON_BIN" -m compileall -q scripts tests
 
 grep -q 'repository: DrKLO/Telegram' .github/workflows/build-apk.yml
 grep -q ':TMessagesProj_App:assembleAfatDebug' .github/workflows/build-apk.yml

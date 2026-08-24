@@ -35,6 +35,20 @@ class ReferenceUiContractTests(unittest.TestCase):
             self.assertIn("TeleFlowUi.", text, filename)
             self.assertNotIn("Theme.key_windowBackgroundGray", text, filename)
 
+    def test_base_fragment_screens_use_pinned_telegram_localization_api(self):
+        for filename in [
+            "TeleFlowHubActivity.java",
+            "TeleFlowSmartFoldersActivity.java",
+            "TeleFlowDriveActivity.java",
+        ]:
+            text = (self.ui_root / filename).read_text(encoding="utf-8")
+            self.assertIn(
+                "import static org.telegram.messenger.LocaleController.getString;",
+                text,
+                filename,
+            )
+            self.assertIn("getString(R.string.", text, filename)
+
     def test_hub_does_not_add_post_skeleton_features(self):
         hub = (self.ui_root / "TeleFlowHubActivity.java").read_text()
         for forbidden in [

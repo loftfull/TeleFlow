@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -62,7 +63,7 @@ class PrepareUpstreamBuildTests(unittest.TestCase):
         root = self.make_checkout()
         script = Path(__file__).resolve().parents[1] / "scripts/prepare_upstream_build.py"
         result = subprocess.run(
-            ["python3", str(script), str(root), "--arm64-smoke"],
+            [sys.executable, str(script), str(root), "--arm64-smoke"],
             text=True,
             capture_output=True,
         )

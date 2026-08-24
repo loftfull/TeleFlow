@@ -24,11 +24,11 @@ class TeleFlowPatcherTests(unittest.TestCase):
         (root / "TMessagesProj/src/main/res/values").mkdir(parents=True)
         (root / "TMessagesProj/src/main/res/values-ru").mkdir(parents=True)
         (root / "TMessagesProj/src/main/java/org/telegram/ui").mkdir(parents=True)
-        (root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java").write_text(BUILDVARS)
-        (root / "TMessagesProj/src/main/res/values/strings.xml").write_text(STRINGS)
-        (root / "TMessagesProj/src/main/res/values-ru/strings.xml").write_text(RU_STRINGS)
-        (root / "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java").write_text(SETTINGS_ACTIVITY)
-        (root / "gradle.properties").write_text(GRADLE_PROPERTIES)
+        (root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java").write_text(BUILDVARS, encoding="utf-8")
+        (root / "TMessagesProj/src/main/res/values/strings.xml").write_text(STRINGS, encoding="utf-8")
+        (root / "TMessagesProj/src/main/res/values-ru/strings.xml").write_text(RU_STRINGS, encoding="utf-8")
+        (root / "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java").write_text(SETTINGS_ACTIVITY, encoding="utf-8")
+        (root / "gradle.properties").write_text(GRADLE_PROPERTIES, encoding="utf-8")
         return root
 
     def test_rejects_official_or_malformed_credentials(self):
@@ -43,9 +43,9 @@ class TeleFlowPatcherTests(unittest.TestCase):
         root = self.make_checkout()
         report = apply_teleflow(root, "123456", "0123456789abcdef0123456789abcdef")
 
-        buildvars = (root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java").read_text()
-        props = (root / "gradle.properties").read_text()
-        strings = (root / "TMessagesProj/src/main/res/values/strings.xml").read_text()
+        buildvars = (root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java").read_text(encoding="utf-8")
+        props = (root / "gradle.properties").read_text(encoding="utf-8")
+        strings = (root / "TMessagesProj/src/main/res/values/strings.xml").read_text(encoding="utf-8")
 
         self.assertIn("public static int APP_ID = 123456;", buildvars)
         self.assertIn('public static String APP_HASH = "0123456789abcdef0123456789abcdef";', buildvars)
@@ -55,10 +55,10 @@ class TeleFlowPatcherTests(unittest.TestCase):
         self.assertIn('<string name="AppName">TeleFlow</string>', strings)
         self.assertIn('<string name="AppNameBeta">TeleFlow Beta</string>', strings)
         self.assertIn('<string name="TeleFlowSettings">TeleFlow</string>', strings)
-        ru_strings = (root / "TMessagesProj/src/main/res/values-ru/strings.xml").read_text()
+        ru_strings = (root / "TMessagesProj/src/main/res/values-ru/strings.xml").read_text(encoding="utf-8")
         self.assertIn('<string name="TeleFlowSmartFolders">Умные папки</string>', ru_strings)
 
-        settings = (root / "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java").read_text()
+        settings = (root / "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java").read_text(encoding="utf-8")
         self.assertIn('import org.telegram.teleflow.ui.TeleFlowHubActivity;', settings)
         self.assertIn('SettingCell.Factory.of(24', settings)
         self.assertIn('case 24:', settings)
@@ -67,7 +67,7 @@ class TeleFlowPatcherTests(unittest.TestCase):
 
         features = root / "TMessagesProj/src/main/java/org/telegram/teleflow/core/TeleFlowFeatures.java"
         self.assertTrue(features.is_file())
-        feature_text = features.read_text()
+        feature_text = features.read_text(encoding="utf-8")
         self.assertIn("SMART_FOLDERS_BOOTSTRAP = true", feature_text)
         self.assertIn("DRIVE_BOOTSTRAP = true", feature_text)
         self.assertIn('PRODUCT_NAME = "TeleFlow"', feature_text)
@@ -171,7 +171,7 @@ public class TeleFlowDomainHarness {
         }
     }
 }
-''')
+''', encoding="utf-8")
         java_sources = [str(path) for path in expected] + [str(harness)]
         classes = root / "classes"
         classes.mkdir()
@@ -181,7 +181,7 @@ public class TeleFlowDomainHarness {
     def test_fails_closed_when_upstream_anchor_is_missing(self):
         root = self.make_checkout()
         buildvars = root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java"
-        buildvars.write_text(BUILDVARS.replace("APP_ID = 4", "APP_ID = 999"))
+        buildvars.write_text(BUILDVARS.replace("APP_ID = 4", "APP_ID = 999"), encoding="utf-8")
 
         with self.assertRaises(PatchError):
             apply_teleflow(root, "123456", "0123456789abcdef0123456789abcdef")
