@@ -12,14 +12,22 @@ GRADLE_PROPERTIES = '''APP_VERSION_CODE=7031\nAPP_VERSION_NAME=12.10.0\nAPP_PACK
 
 STRINGS = '''<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="AppName">Telegram</string>\n    <string name="AppNameBeta">Telegram Beta</string>\n</resources>\n'''
 
+RU_STRINGS = '''<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="LanguageName">Русский</string>\n</resources>\n'''
+
+SETTINGS_ACTIVITY = '''package org.telegram.ui;\n\nimport org.telegram.tgnet.TLRPC;\n\npublic class SettingsActivity {\n    private void fillItems(java.util.ArrayList<Object> items) {\n        items.add(SettingCell.Factory.of(7, IconBackgroundColors.BLUE_ALT.top, IconBackgroundColors.BLUE_ALT.bottom, R.drawable.settings_folders, getString(R.string.SettingsFolders), getString(R.string.SettingsFoldersInfo)));\n        items.add(SettingCell.Factory.of(8, IconBackgroundColors.CYAN.top, IconBackgroundColors.CYAN.bottom, R.drawable.settings_devices, getString(R.string.SettingsDevices), getString(R.string.SettingsDevicesInfo)));\n    }\n\n    private void onClick(UItem item) {\n        switch (item.id) {\n            case 7:\n                presentSettingFragment(new FiltersSetupActivity());\n                break;\n            case 8:\n                presentSettingFragment(new SessionsActivity(0));\n                break;\n        }\n    }\n}\n'''
+
 
 class TeleFlowPatcherTests(unittest.TestCase):
     def make_checkout(self) -> Path:
         root = Path(tempfile.mkdtemp())
         (root / "TMessagesProj/src/main/java/org/telegram/messenger").mkdir(parents=True)
         (root / "TMessagesProj/src/main/res/values").mkdir(parents=True)
+        (root / "TMessagesProj/src/main/res/values-ru").mkdir(parents=True)
+        (root / "TMessagesProj/src/main/java/org/telegram/ui").mkdir(parents=True)
         (root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java").write_text(BUILDVARS)
         (root / "TMessagesProj/src/main/res/values/strings.xml").write_text(STRINGS)
+        (root / "TMessagesProj/src/main/res/values-ru/strings.xml").write_text(RU_STRINGS)
+        (root / "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java").write_text(SETTINGS_ACTIVITY)
         (root / "gradle.properties").write_text(GRADLE_PROPERTIES)
         return root
 
@@ -46,7 +54,16 @@ class TeleFlowPatcherTests(unittest.TestCase):
         self.assertIn("APP_PACKAGE=com.loftfull.teleflow", props)
         self.assertIn('<string name="AppName">TeleFlow</string>', strings)
         self.assertIn('<string name="AppNameBeta">TeleFlow Beta</string>', strings)
-        self.assertGreaterEqual(report.changed_files, 10)
+        self.assertIn('<string name="TeleFlowSettings">TeleFlow</string>', strings)
+        ru_strings = (root / "TMessagesProj/src/main/res/values-ru/strings.xml").read_text()
+        self.assertIn('<string name="TeleFlowSmartFolders">Умные папки</string>', ru_strings)
+
+        settings = (root / "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java").read_text()
+        self.assertIn('import org.telegram.teleflow.ui.TeleFlowHubActivity;', settings)
+        self.assertIn('SettingCell.Factory.of(24', settings)
+        self.assertIn('case 24:', settings)
+        self.assertIn('presentSettingFragment(new TeleFlowHubActivity());', settings)
+        self.assertGreaterEqual(report.changed_files, 14)
 
         features = root / "TMessagesProj/src/main/java/org/telegram/teleflow/core/TeleFlowFeatures.java"
         self.assertTrue(features.is_file())
@@ -65,6 +82,14 @@ class TeleFlowPatcherTests(unittest.TestCase):
             drive_dir / "VirtualPath.java",
             drive_dir / "DriveObject.java",
         ]
+        ui_dir = root / "TMessagesProj/src/main/java/org/telegram/teleflow/ui"
+        ui_expected = [
+            ui_dir / "TeleFlowHubActivity.java",
+            ui_dir / "TeleFlowSmartFoldersActivity.java",
+            ui_dir / "TeleFlowDriveActivity.java",
+        ]
+        for generated in ui_expected:
+            self.assertTrue(generated.is_file(), generated)
         for generated in expected:
             self.assertTrue(generated.is_file(), generated)
 
