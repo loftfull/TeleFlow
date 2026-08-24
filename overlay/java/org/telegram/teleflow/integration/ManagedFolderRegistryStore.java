@@ -6,9 +6,13 @@ import android.content.SharedPreferences;
 
 import java.util.Locale;
 
+import org.telegram.teleflow.folders.ManagedFolderRegistration;
+
 public final class ManagedFolderRegistryStore {
     private static final String PREFS_PREFIX = "teleflow_folder_registry_";
     private static final String KEY_PREFIX = "logical_";
+    private static final String KEY_ID_SUFFIX = "_id";
+    private static final String KEY_NAME_SUFFIX = "_name";
 
     private final SharedPreferences preferences;
 
@@ -22,24 +26,45 @@ public final class ManagedFolderRegistryStore {
         preferences = context.getApplicationContext().getSharedPreferences(PREFS_PREFIX + account, Context.MODE_PRIVATE);
     }
 
-    public Integer loadFolderId(String logicalKey) {
-        String key = key(logicalKey);
-        if (!preferences.contains(key)) {
+    public ManagedFolderRegistration loadRegistration(String logicalKey) {
+        String prefix = key(logicalKey);
+        if (!preferences.contains(prefix + KEY_ID_SUFFIX)) {
             return null;
         }
-        int value = preferences.getInt(key, -1);
-        return value >= 2 ? value : null;
+        int folderId = preferences.getInt(prefix + KEY_ID_SUFFIX, -1);
+        String serverName = preferences.getString(prefix + KEY_NAME_SUFFIX, null);
+        if (folderId < 2 || serverName == null || serverName.trim().isEmpty()) {
+            return null;
+        }
+        return new ManagedFolderRegistration(normalizeKey(logicalKey), folderId, serverName);
+    }
+
+    public boolean saveRegistration(ManagedFolderRegistration registration) {
+        if (registration == null) {
+            throw new IllegalArgumentException("registration is required");
+        }
+        String prefix = key(registration.getLogicalKey());
+        return preferences.edit()
+            .putInt(prefix + KEY_ID_SUFFIX, registration.getFolderId())
+            .putString(prefix + KEY_NAME_SUFFIX, registration.getExpectedServerName())
+            .commit();
+    }
+
+    public Integer loadFolderId(String logicalKey) {
+        ManagedFolderRegistration registration = loadRegistration(logicalKey);
+        return registration == null ? null : registration.getFolderId();
     }
 
     public boolean saveFolderId(String logicalKey, int folderId) {
-        if (folderId < 2) {
-            throw new IllegalArgumentException("managed folderId must be >= 2");
-        }
-        return preferences.edit().putInt(key(logicalKey), folderId).commit();
+        throw new UnsupportedOperationException("Use saveRegistration() so folder identity is persisted with the id");
     }
 
     public boolean delete(String logicalKey) {
-        return preferences.edit().remove(key(logicalKey)).commit();
+        String prefix = key(logicalKey);
+        return preferences.edit()
+            .remove(prefix + KEY_ID_SUFFIX)
+            .remove(prefix + KEY_NAME_SUFFIX)
+            .commit();
     }
 
     private static String key(String logicalKey) {
