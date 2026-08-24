@@ -15,6 +15,7 @@ public final class SmartFoldersTransaction {
     private final BaseFragment fragment;
     private final MessagesController.DialogFilter filter;
     private final FolderBackupStore backupStore;
+    private final ManagedFolderStateBackupStore managedBackupStore;
     private final ManagedFolderStateStore managedStore;
 
     public SmartFoldersTransaction(BaseFragment fragment, MessagesController.DialogFilter filter, int account) {
@@ -27,6 +28,7 @@ public final class SmartFoldersTransaction {
         this.fragment = fragment;
         this.filter = filter;
         this.backupStore = new FolderBackupStore(fragment.getParentActivity(), account);
+        this.managedBackupStore = new ManagedFolderStateBackupStore(fragment.getParentActivity(), account);
         this.managedStore = new ManagedFolderStateStore(fragment.getParentActivity(), account);
     }
 
@@ -41,6 +43,7 @@ public final class SmartFoldersTransaction {
             managed,
             desiredManagedDialogIds,
             backupPersistence(),
+            managedBackupPersistence(),
             managedPersistence(),
             remote(),
             completion
@@ -48,9 +51,12 @@ public final class SmartFoldersTransaction {
     }
 
     public void undo(FolderApplyCoordinator.Completion completion) {
+        FolderServerSnapshot current = TelegramFolderGateway.snapshot(filter);
         FolderApplyCoordinator.undo(
+            current,
             filter.id,
             backupPersistence(),
+            managedBackupPersistence(),
             managedPersistence(),
             remote(),
             completion
@@ -59,33 +65,34 @@ public final class SmartFoldersTransaction {
 
     private FolderApplyCoordinator.BackupPersistence backupPersistence() {
         return new FolderApplyCoordinator.BackupPersistence() {
-            @Override
-            public boolean save(FolderServerSnapshot snapshot) { return backupStore.save(snapshot); }
-            @Override
-            public FolderServerSnapshot load(int folderId) { return backupStore.load(folderId); }
-            @Override
-            public boolean delete(int folderId) { return backupStore.delete(folderId); }
+            @Override public boolean save(FolderServerSnapshot snapshot) { return backupStore.save(snapshot); }
+            @Override public FolderServerSnapshot load(int folderId) { return backupStore.load(folderId); }
+            @Override public boolean delete(int folderId) { return backupStore.delete(folderId); }
+        };
+    }
+
+    private FolderApplyCoordinator.ManagedBackupPersistence managedBackupPersistence() {
+        return new FolderApplyCoordinator.ManagedBackupPersistence() {
+            @Override public boolean save(ManagedFolderState state) { return managedBackupStore.save(state); }
+            @Override public ManagedFolderState load(int folderId) { return managedBackupStore.load(folderId); }
+            @Override public boolean delete(int folderId) { return managedBackupStore.delete(folderId); }
         };
     }
 
     private FolderApplyCoordinator.ManagedPersistence managedPersistence() {
         return new FolderApplyCoordinator.ManagedPersistence() {
-            @Override
-            public boolean save(ManagedFolderState state) { return managedStore.save(state); }
-            @Override
-            public boolean delete(int folderId) { return managedStore.delete(folderId); }
+            @Override public ManagedFolderState load(int folderId) { return managedStore.load(folderId); }
+            @Override public boolean save(ManagedFolderState state) { return managedStore.save(state); }
+            @Override public boolean delete(int folderId) { return managedStore.delete(folderId); }
         };
     }
 
     private FolderApplyCoordinator.Remote remote() {
         return new FolderApplyCoordinator.Remote() {
-            @Override
-            public void apply(FolderUpdatePlan plan, FolderApplyCoordinator.RemoteCallback callback) {
+            @Override public void apply(FolderUpdatePlan plan, FolderApplyCoordinator.RemoteCallback callback) {
                 TelegramFolderGateway.applyExisting(fragment, filter, plan, callback::onResult);
             }
-
-            @Override
-            public void restore(FolderServerSnapshot snapshot, FolderApplyCoordinator.RemoteCallback callback) {
+            @Override public void restore(FolderServerSnapshot snapshot, FolderApplyCoordinator.RemoteCallback callback) {
                 TelegramFolderGateway.restoreSnapshot(fragment, filter, snapshot, callback::onResult);
             }
         };
