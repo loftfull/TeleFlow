@@ -1,0 +1,32 @@
+name: Preview-only safety policy
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - English
+      - teleflow/bootstrap
+  push:
+    branches:
+      - teleflow/bootstrap
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-only-policy-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview-only-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout TeleFlow
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run preview-only policy and workflow contracts
+        run: python3 -m unittest tests.test_preview_only_policy tests.test_preview_only_policy_workflow -v
+
+      - name: Verify shipping-source policy
+        run: python3 scripts/preview_only_policy.py
