@@ -76,6 +76,33 @@ def apply_teleflow(root: Path, api_id: str, api_hash: str) -> PatchReport:
     _replace_exact(strings, '<string name="AppNameBeta">Telegram Beta</string>', '<string name="AppNameBeta">TeleFlow Beta</string>')
     changed.add(strings)
 
+    overlay_root = Path(__file__).resolve().parent.parent / "overlay"
+    teleflow_strings = (overlay_root / "values/strings.xml.fragment").read_text(encoding="utf-8")
+    _replace_exact(strings, "</resources>", teleflow_strings + "\n</resources>")
+
+    ru_strings = root / "TMessagesProj/src/main/res/values-ru/strings.xml"
+    teleflow_ru_strings = (overlay_root / "values-ru/strings.xml.fragment").read_text(encoding="utf-8")
+    _replace_exact(ru_strings, "</resources>", teleflow_ru_strings + "\n</resources>")
+    changed.add(ru_strings)
+
+    settings_activity = root / "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java"
+    _replace_exact(
+        settings_activity,
+        "import org.telegram.tgnet.TLRPC;",
+        "import org.telegram.tgnet.TLRPC;\nimport org.telegram.teleflow.ui.TeleFlowHubActivity;",
+    )
+    _replace_exact(
+        settings_activity,
+        "items.add(SettingCell.Factory.of(7, IconBackgroundColors.BLUE_ALT.top, IconBackgroundColors.BLUE_ALT.bottom, R.drawable.settings_folders, getString(R.string.SettingsFolders), getString(R.string.SettingsFoldersInfo)));\n        items.add(SettingCell.Factory.of(8, IconBackgroundColors.CYAN.top, IconBackgroundColors.CYAN.bottom, R.drawable.settings_devices, getString(R.string.SettingsDevices), getString(R.string.SettingsDevicesInfo)));",
+        "items.add(SettingCell.Factory.of(7, IconBackgroundColors.BLUE_ALT.top, IconBackgroundColors.BLUE_ALT.bottom, R.drawable.settings_folders, getString(R.string.SettingsFolders), getString(R.string.SettingsFoldersInfo)));\n        items.add(SettingCell.Factory.of(24, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.settings_features, getString(R.string.TeleFlowSettings), getString(R.string.TeleFlowSettingsInfo)));\n        items.add(SettingCell.Factory.of(8, IconBackgroundColors.CYAN.top, IconBackgroundColors.CYAN.bottom, R.drawable.settings_devices, getString(R.string.SettingsDevices), getString(R.string.SettingsDevicesInfo)));",
+    )
+    _replace_exact(
+        settings_activity,
+        "case 7:\n                presentSettingFragment(new FiltersSetupActivity());\n                break;\n            case 8:",
+        "case 7:\n                presentSettingFragment(new FiltersSetupActivity());\n                break;\n            case 24:\n                presentSettingFragment(new TeleFlowHubActivity());\n                break;\n            case 8:",
+    )
+    changed.add(settings_activity)
+
     base = root / "TMessagesProj/src/main/java/org/telegram/teleflow"
     generated = {
         base / "core/TeleFlowFeatures.java": r'''/* SPDX-License-Identifier: GPL-2.0-or-later */
@@ -261,6 +288,15 @@ public final class DriveObject {
     for path, content in generated.items():
         _write_new(path, content)
         changed.add(path)
+
+    java_overlay_root = overlay_root / "java"
+    if not java_overlay_root.is_dir():
+        raise PatchError(f"TeleFlow Java overlay is missing: {java_overlay_root}")
+    for source in sorted(java_overlay_root.rglob("*.java")):
+        relative = source.relative_to(java_overlay_root)
+        target = root / "TMessagesProj/src/main/java" / relative
+        _write_new(target, source.read_text(encoding="utf-8"))
+        changed.add(target)
 
     return PatchReport(changed_files=len(changed))
 
