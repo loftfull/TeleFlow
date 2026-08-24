@@ -14,6 +14,7 @@ import org.telegram.teleflow.folders.ManagedFolderIdentityGuard;
 import org.telegram.teleflow.folders.ManagedFolderRegistration;
 import org.telegram.teleflow.folders.ManagedFolderResolution;
 import org.telegram.teleflow.folders.ManagedFolderSpec;
+import org.telegram.teleflow.folders.TelegramFolderLimitPolicy;
 
 public final class ManagedFolderResolver {
     private ManagedFolderResolver() {}
@@ -43,10 +44,11 @@ public final class ManagedFolderResolver {
             }
         }
 
-        int currentUserFolderCount = Math.max(0, liveFilters.size() - 1);
-        int folderLimit = UserConfig.getInstance(account).isPremium()
-            ? controller.dialogFiltersLimitPremium
-            : controller.dialogFiltersLimitDefault;
+        boolean premium = UserConfig.getInstance(account).isPremium();
+        int currentUserFolderCount = TelegramFolderLimitPolicy.currentUserFolderCount(liveFilters.size());
+        int folderLimit = TelegramFolderLimitPolicy.effectiveUserFolderLimit(
+            premium, controller.dialogFiltersLimitDefault, controller.dialogFiltersLimitPremium
+        );
         return new ManagedFolderInventory(active, statuses, currentUserFolderCount, folderLimit);
     }
 }
