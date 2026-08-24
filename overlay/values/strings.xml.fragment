@@ -7,3 +7,6 @@
     <string name="TeleFlowDrive">Drive</string>
     <string name="TeleFlowDriveInfo">Personal Telegram-backed cloud workspace</string>
     <string name="TeleFlowDriveStatus">Virtual paths and Telegram object model are ready</string>
+    <string name="TeleFlowSmartFoldersScanned">Dialogs analyzed</string>
+    <string name="TeleFlowSmartFoldersNeedsReview">Need review</string>
+    <string name="TeleFlowReviewFolder">Review</string>
