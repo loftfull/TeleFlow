@@ -55,3 +55,7 @@ The self-check validates the bootstrap itself. A full Android build requires the
 TeleFlow is designed as a derivative of Telegram Android and must be distributed in compliance with the upstream GPL terms. The TeleFlow-specific source in this bootstrap is intended to remain available under GPL-2.0-or-later compatible terms.
 
 TeleFlow is unofficial and is not affiliated with Telegram.
+
+## Source and integration status
+
+The default branch currently contains starter/configuration material. Existing source implementations and their integration gates are listed in [source status](.github/SOURCE_STATUS.md). A source candidate is not a verified release.
