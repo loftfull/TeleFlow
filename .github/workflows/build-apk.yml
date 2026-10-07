@@ -1,0 +1,93 @@
+name: Build TeleFlow Android Full APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      TELEGRAM_REF: 3f03bfc73f1d176e349765c2990e52f490409813
+    steps:
+      - name: Checkout TeleFlow bootstrap
+        uses: actions/checkout@v4
+        with:
+          path: teleflow
+
+      - name: Checkout official Telegram Android
+        uses: actions/checkout@v4
+        with:
+          repository: DrKLO/Telegram
+          ref: ${{ env.TELEGRAM_REF }}
+          path: Telegram
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build dependencies
+        shell: bash
+        run: |
+          sdkmanager \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;27.2.12479018" \
+            "cmake;3.10.2.4988404"
+
+      - name: Validate TeleFlow secrets
+        shell: bash
+        env:
+          API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          test -n "$API_ID" || { echo "Missing TELEGRAM_API_ID repository secret"; exit 2; }
+          test -n "$API_HASH" || { echo "Missing TELEGRAM_API_HASH repository secret"; exit 2; }
+
+      - name: Run bootstrap tests
+        working-directory: teleflow
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Verify pinned Telegram checkout
+        run: python3 teleflow/scripts/verify_checkout.py Telegram
+
+      - name: Prepare pinned Telegram Gradle mapping
+        run: python3 teleflow/scripts/prepare_upstream_build.py Telegram
+
+      - name: Apply TeleFlow overlay
+        env:
+          API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          python3 teleflow/scripts/apply_teleflow.py Telegram \
+            --api-id "$API_ID" \
+            --api-hash "$API_HASH"
+
+      - name: Verify TeleFlow identity
+        shell: bash
+        run: |
+          grep -q '^APP_PACKAGE=com.loftfull.teleflow$' Telegram/gradle.properties
+          grep -q '<string name="AppName">TeleFlow</string>' Telegram/TMessagesProj/src/main/res/values/strings.xml
+          test -f Telegram/TMessagesProj/src/main/java/org/telegram/teleflow/core/TeleFlowFeatures.java
+
+      - name: Build full afat debug APK
+        working-directory: Telegram
+        run: ./gradlew --no-daemon :TMessagesProj_App:assembleAfatDebug
+
+      - name: Upload full TeleFlow APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: teleflow-android-full-debug
+          path: Telegram/TMessagesProj_App/build/outputs/apk/**/app.apk
+          if-no-files-found: error
+          retention-days: 14
